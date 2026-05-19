@@ -10,17 +10,10 @@ const MODELS = [
 // ── Referencias DOM ───────────────────────────────────────────────────────────
 const startScreen = document.getElementById('start-screen');
 const modelScreen = document.getElementById('model-screen');
-const arContainer = document.getElementById('ar-container');
 const startButton = document.getElementById('start-button');
 const backBtn = document.getElementById('back-btn');
 const arButton = document.getElementById('ar-button');
 
-const exitArBtn = document.getElementById('exit-ar-btn');
-const captureBtn = document.getElementById('capture-btn');
-const camaraPreview = document.getElementById('camara-preview');
-const photoCanvas = document.getElementById('photo-canvas');
-
-const arModel = document.getElementById('ar-model');
 const carouselTrack = document.getElementById('carousel-track');
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
@@ -32,7 +25,6 @@ const totalModelsEl = document.getElementById('total-models');
 
 // ── Estado del carrusel ───────────────────────────────────────────────────────
 let currentSlide = 0;
-let camaraStream = null; 
 
 // ── Inicializar carrusel ──────────────────────────────────────────────────────
 if (totalModelsEl) totalModelsEl.textContent = MODELS.length;
@@ -56,6 +48,11 @@ function createCarouselSlides() {
         viewer.setAttribute('exposure', '1');
         viewer.setAttribute('shadow-softness', '0.8');
         viewer.setAttribute('alt', model.name);
+        
+        // REQUISITO PARA GITHUB PAGES / MÓVILES: Activar propiedades de AR directamente en el carrusel
+        viewer.setAttribute('ar', '');
+        viewer.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
+        viewer.setAttribute('ar-scale', 'auto');
 
         const progress = document.createElement('div');
         progress.className = 'progress-bar hide';
@@ -74,7 +71,7 @@ createCarouselSlides();
 
 // Crear dots
 if (dotsContainer) {
-    dotsContainer.innerHTML = ''; // Evita duplicados en recargas
+    dotsContainer.innerHTML = ''; 
     MODELS.forEach((_, i) => {
         const dot = document.createElement('button');
         dot.classList.add('dot');
@@ -100,7 +97,6 @@ function updateCarouselUI() {
     if (nextBtn) nextBtn.disabled = currentSlide === MODELS.length - 1;
 }
 
-// Forzar actualización al cargar para poblar los textos e interfaz iniciales
 updateCarouselUI();
 
 function goToSlide(index) {
@@ -129,7 +125,7 @@ if (carouselTrack) {
     }, { passive: true });
 }
 
-// ── Navegación entre pantallas ────────────────────────────────────────────────
+// ── Navegación básica entre pantallas ──────────────────────────────────────────
 if (startButton) {
     startButton.addEventListener('click', () => {
         if (startScreen) startScreen.style.display = 'none';
@@ -145,74 +141,24 @@ if (backBtn) {
     });
 }
 
-// ── Activar AR ────────────────────────────────────────────────────────────────
+// ── Activar AR Directamente (Modificado) ───────────────────────────────────────
 if (arButton) {
-    arButton.addEventListener('click', async () => {
-        const activeModel = MODELS[currentSlide];
-        if (arModel && activeModel) arModel.setAttribute('src', activeModel.src);
+    arButton.addEventListener('click', () => {
+        // 1. Buscamos todas las instancias de model-viewer que creamos en el carrusel
+        const viewInstances = document.querySelectorAll('.model-viewer-instance');
+        
+        // 2. Seleccionamos exactamente la que corresponde al slide que el usuario está viendo
+        const activeViewer = viewInstances[currentSlide];
 
-        if (modelScreen) modelScreen.style.display = 'none';
-        if (arContainer) arContainer.style.display = 'flex';
-
-        try {
-            // Lógica de cámara opcional
-        } catch (error) {
-            console.warn('No se pudo acceder a la cámara:', error);
-        }
-
-        if (arModel && arModel.activateAR) {
-            arModel.activateAR();
+        // 3. Si existe y el dispositivo soporta AR, ejecutamos el disparo directo de la cámara
+        if (activeViewer && activeViewer.activateAR) {
+            console.log('Lanzando AR directo para:', MODELS[currentSlide].name);
+            activeViewer.activateAR();
+        } else {
+            console.warn('El navegador no soporta AR o el elemento no está listo.');
         }
     });
 }
-
-if (exitArBtn) {
-    exitArBtn.addEventListener('click', () => {
-        if (arContainer) arContainer.style.display = 'none';
-        if (modelScreen) modelScreen.style.display = 'flex';
-        resetAR();
-    });
-}
-
-// ── Eventos del AR model-viewer ───────────────────────────────────────────────
-if (arModel) {
-    arModel.addEventListener('ar-status', e => {
-        console.log('Estado AR:', e.detail.status);
-
-        if (e.detail.status === 'not-presenting' || e.detail.status === 'session-ended') {
-            if (arContainer) arContainer.style.display = 'none';
-            if (modelScreen) modelScreen.style.display = 'flex';
-            resetAR();
-        }
-    });
-}
-
-function resetAR() {
-   if (camaraStream) {
-       camaraStream.getTracks().forEach(track => track.stop());
-       camaraStream = null;
-   }
-   if (camaraPreview) {
-       camaraPreview.srcObject = null;
-   }
-}
-
-function downloadBlob(blob){
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ar-foto-${Date.now()}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
-}
-
-window.addEventListener('beforeunload', () => {
-    if (camaraStream) {
-        camaraStream.getTracks().forEach(track => track.stop());
-    }
-});
 
 // ── Detección de dispositivo ──────────────────────────────────────────────────
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
