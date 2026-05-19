@@ -17,10 +17,42 @@
 
 <body>
 
+    <!-- ── Pantalla de inicio ── -->
+    <div id="start-screen" class="screen">
+        <div class="start-content">
+            <span class="brand-tag">Turismo AR</span>
+            <h1>Explora la <em>Iglesia de Colores</em></h1>
+            <p>Descubre la devoción al Cristo Negro y visualiza el modelo 3D en realidad aumentada desde tu dispositivo.</p>
+
+            <div class="instructions-box">
+                <p class="instr-title">Cómo usar</p>
+                <ol>
+                    <li><span class="step-num">1</span> Presiona <strong>Iniciar</strong>.</li>
+                    <li><span class="step-num">2</span> Desliza para cambiar de modelo.</li>
+                    <li><span class="step-num">3</span> Presiona <strong>Ver en AR</strong>.</li>
+                </ol>
+            </div>
+
+            <button id="start-button" class="primary-btn">
+                Iniciar experiencia
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M13 5l7 7-7 7" />
+                </svg>
+            </button>
+
+            <p class="note">Funciona mejor en dispositivos compatibles con WebXR y model-viewer.</p>
+        </div>
+    </div>
+
     <!-- ── Pantalla del carrusel de modelos ── -->
-    <div id="model-screen" class="screen">
+    <div id="model-screen" class="screen" style="display: none;">
 
         <div class="carousel-header">
+            <button id="back-btn" class="icon-btn" title="Volver">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+            </button>
             <span class="carousel-counter"><span id="current-index">1</span> / <span id="total-models">0</span></span>
         </div>
 
@@ -63,6 +95,22 @@
             </button>
         </div>
 
+    </div>
+
+    <!-- ── Contenedor AR ── -->
+    <div id="ar-container" style="display: none;">
+        <div class="ar-content">
+            <model-viewer id="ar-model" ar ar-scale="auto" camera-controls auto-rotate
+                environment-image="neutral" shadow-intensity="1.5" exposure="1" shadow-softness="0.8"
+                alt="Modelo 3D">
+                <div class="progress-bar hide" slot="progress-bar">
+                    <div class="update-bar"></div>
+                </div>
+            </model-viewer>
+            <div class="ar-controls">
+                <button id="exit-ar-btn" class="control-btn" type="button">Salir AR</button>
+            </div>
+        </div>
     </div>
 
     <script src="./../js/main.js"></script>
