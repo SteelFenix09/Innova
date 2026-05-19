@@ -2,7 +2,6 @@
 const MODELS = [
     {
         name: 'Iglesia de Colores',
-        description: 'Se venera al "Cristo Negro". La devoción es tan grande que incluso se cuenta que durante la Revolución, habitantes choles escondieron la imagen original para evitar que fuera quemada.',
         src: './../figuras/iglesia.glb', 
     }
 ];
