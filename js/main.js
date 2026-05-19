@@ -9,16 +9,20 @@ const MODELS = [
 ];
 
 // ── Referencias DOM ───────────────────────────────────────────────────────────
+const startScreen = document.getElementById('start-screen');
 const modelScreen = document.getElementById('model-screen');
 const arContainer = document.getElementById('ar-container');
-const cameraContainer = document.getElementById('camera-container');
+const startButton = document.getElementById('start-button');
+const backBtn = document.getElementById('back-btn');
 const arButton = document.getElementById('ar-button');
-const exitArBtn = document.getElementById('exit-ar-btn');
 
-// ── Variables de cámara ───────────────────────────────────────────────────────
-let camaraStream = null;
-let camaraPreview = null;
+/*const exitArBtn = document.getElementById('exit-ar-btn');
+const captureBtn = document.getElementById('capture-btn');
+const camaraPreview = document.getElementById('camara-preview');
+const photoCanvas = document.getElementById('photo-canvas');*/
 
+
+const arModel = document.getElementById('ar-model');
 const carouselTrack = document.getElementById('carousel-track');
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
@@ -30,43 +34,10 @@ const totalModelsEl = document.getElementById('total-models');
 
 // ── Estado del carrusel ───────────────────────────────────────────────────────
 let currentSlide = 0;
+//let camaraStream = null;
 
 // ── Inicializar carrusel ──────────────────────────────────────────────────────
 totalModelsEl.textContent = MODELS.length;
-
-function createCarouselSlides() {
-    carouselTrack.innerHTML = '';
-
-    MODELS.forEach((model, index) => {
-        const slide = document.createElement('div');
-        slide.classList.add('carousel-slide');
-        slide.dataset.index = index;
-
-        const viewer = document.createElement('model-viewer');
-        viewer.classList.add('model-viewer-instance');
-        viewer.setAttribute('src', model.src);
-        viewer.setAttribute('camera-controls', '');
-        viewer.setAttribute('auto-rotate', '');
-        viewer.setAttribute('environment-image', 'neutral');
-        viewer.setAttribute('shadow-intensity', '1.5');
-        viewer.setAttribute('exposure', '1');
-        viewer.setAttribute('shadow-softness', '0.8');
-        viewer.setAttribute('alt', model.name);
-
-        const progress = document.createElement('div');
-        progress.className = 'progress-bar hide';
-        progress.setAttribute('slot', 'progress-bar');
-        const updateBar = document.createElement('div');
-        updateBar.className = 'update-bar';
-        progress.appendChild(updateBar);
-
-        viewer.appendChild(progress);
-        slide.appendChild(viewer);
-        carouselTrack.appendChild(slide);
-    });
-}
-
-createCarouselSlides();
 
 // Crear dots
 MODELS.forEach((_, i) => {
@@ -123,152 +94,118 @@ carouselTrack.addEventListener('touchend', e => {
     }
 }, { passive: true });
 
-// ── Inicializar pantalla del carrusel ─────────────────────────────────────────
-if (modelScreen) {
+// ── Navegación entre pantallas ────────────────────────────────────────────────
+startButton.addEventListener('click', () => {
+    startScreen.style.display = 'none';
     modelScreen.style.display = 'flex';
     updateCarouselUI();
-}
+});
 
-// ── Abrir cámara ──────────────────────────────────────────────────────────────
-if (arButton) {
-    arButton.addEventListener('click', async () => {
-        await abrirCamara();
-    });
-}
+backBtn.addEventListener('click', () => {
+    modelScreen.style.display = 'none';
+    startScreen.style.display = 'flex';
+});
 
-async function abrirCamara() {
+// ── Activar AR ────────────────────────────────────────────────────────────────
+arButton.addEventListener('click', async () => {
+    const activeModel = MODELS[currentSlide];
+    arModel.setAttribute('src', activeModel.src);
+
+    modelScreen.style.display = 'none';
+    arContainer.style.display = 'flex';
+
+    // Solicitar acceso a cámara
     try {
-        // Solicitar acceso a la cámara
-        camaraStream = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: 'environment' },
-            audio: false 
-        });
-
-        // Crear contenedor de cámara si no existe
-        if (!camaraPreview) {
-            const container = document.createElement('div');
-            container.id = 'camera-container';
-            container.style.cssText = `
-                position: fixed;
-                inset: 0;
-                z-index: 200;
-                background: #000;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-            `;
-
-            camaraPreview = document.createElement('video');
-            camaraPreview.style.cssText = `
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            `;
-            camaraPreview.autoplay = true;
-            camaraPreview.playsinline = true;
-            camaraPreview.srcObject = camaraStream;
-
-            // Botones de control
-            const controls = document.createElement('div');
-            controls.style.cssText = `
-                position: absolute;
-                bottom: 40px;
-                left: 50%;
-                transform: translateX(-50%);
-                display: flex;
-                gap: 12px;
-                z-index: 201;
-            `;
-
-            const btnCapturar = document.createElement('button');
-            btnCapturar.textContent = 'Capturar';
-            btnCapturar.style.cssText = `
-                background: rgba(200,169,110,0.9);
-                color: #0d0f14;
-                border: none;
-                padding: 12px 22px;
-                border-radius: 50px;
-                font-size: 1rem;
-                font-weight: 600;
-                cursor: pointer;
-                font-family: 'DM Sans', sans-serif;
-            `;
-            btnCapturar.addEventListener('click', capturarFoto);
-
-            const btnSalir = document.createElement('button');
-            btnSalir.textContent = 'Cerrar';
-            btnSalir.style.cssText = `
-                background: rgba(13,15,20,0.85);
-                color: #f0ece4;
-                border: 1px solid rgba(255,255,255,0.07);
-                padding: 12px 22px;
-                border-radius: 50px;
-                font-size: 1rem;
-                font-weight: 600;
-                cursor: pointer;
-                font-family: 'DM Sans', sans-serif;
-            `;
-            btnSalir.addEventListener('click', cerrarCamara);
-
-            controls.appendChild(btnCapturar);
-            controls.appendChild(btnSalir);
-            container.appendChild(camaraPreview);
-            container.appendChild(controls);
-            document.body.appendChild(container);
-        } else {
-            camaraPreview.srcObject = camaraStream;
-            const container = document.getElementById('camera-container');
-            if (container) container.style.display = 'flex';
-        }
-
-        // Ocultar carrusel
-        if (modelScreen) modelScreen.style.display = 'none';
-
     } catch (error) {
-        console.error('Error al acceder a la cámara:', error);
-        alert('No se pudo acceder a la cámara. Por favor, verifica los permisos.');
-    }
-}
-
-function cerrarCamara() {
-    if (camaraStream) {
-        camaraStream.getTracks().forEach(track => track.stop());
-        camaraStream = null;
-    }
-    
-    const container = document.getElementById('camera-container');
-    if (container) {
-        container.style.display = 'none';
+        console.warn('No se pudo acceder a la cámara:', error);
     }
 
-    if (modelScreen) modelScreen.style.display = 'flex';
-}
+    if (arModel.activateAR) {
+        arModel.activateAR();
+    }
 
-function capturarFoto() {
-    const canvas = document.createElement('canvas');
-    canvas.width = camaraPreview.videoWidth;
-    canvas.height = camaraPreview.videoHeight;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(camaraPreview, 0, 0);
-    
-    canvas.toBlob(blob => {
-        downloadBlob(blob);
-    }, 'image/jpeg', 0.95);
-}
+    /*arModel.setAttribute('camera-controls', '');
+    arModel.style.pointerEvents = 'auto'; */
+});
 
 // ── Salir de AR (botón manual) ────────────────────────────────────────────────
-if (exitArBtn) {
-    exitArBtn.addEventListener('click', () => {
-        if (arContainer) arContainer.style.display = 'none';
-        if (modelScreen) modelScreen.style.display = 'flex';
-        resetAR();
+/*exitArBtn.addEventListener('click', () => {
+    arContainer.style.display = 'none';
+    modelScreen.style.display = 'flex';
+    resetAR();
+});
+
+// ── Eventos del AR model-viewer ───────────────────────────────────────────────
+if (arModel) {
+    arModel.addEventListener('click', () => {
+        if (!modelPlaced && arModel.hasAttribute('ar')) {
+            modelPlaced = true;
+            arModel.removeAttribute('camera-controls');
+            arModel.style.pointerEvents = 'none';
+            arModel.classList.add('model-locked');
+        }
+    }); 
+
+captureBtn.addEventListener('click', async () => {
+    if (arModel && arModel.toBlob) {
+        try {
+            const blob = await arModel.toBlob({ idealAspect: true })
+            if (blob) {
+                downloadBlob(blob)
+                return
+            }
+        } catch (error) {
+            console.warn('No se pudo capturar desde el model-viewer, intentando con camara: ', error)
+        }
+    }
+
+    if (!camaraPreview || !photoCanvas || !camaraPreview.videoWidth || !camaraPreview.videoHeight) {
+        alert('No hay señal de camara disponible todavia para tomar foto.')
+        return
+    }
+
+    const ctx = photoCanvas.getContext('2d')
+    photoCanvas.width = camaraPreview.videoWidth
+    photoCanvas.height = camaraPreview.videoHeight
+    ctx.drawImage(camaraPreview, 0, 0, photoCanvas.width, photoCanvas.height)
+    photoCanvas.toBlob(blob => {
+        if (blob) downloadBlob(blob)
+    }, 'image/jpeg', 0.95)
+}) */
+
+if (arModel) {
+    arModel.addEventListener('ar-status', e => {
+        console.log('Estado AR:', e.detail.status);
+
+        if (e.detail.status === 'not-presenting' || e.detail.status === 'session-ended') {
+            arContainer.style.display = 'none';
+            modelScreen.style.display = 'flex';
+            resetAR();
+        }
+
+        /* if (e.detail.status === 'session-started') {
+             modelPlaced = false;
+             arModel.setAttribute('camera-controls', '');
+             arModel.style.pointerEvents = 'auto';
+             arModel.classList.remove('model-locked');
+         } */
     });
 }
 
 function resetAR() {
-    cerrarCamara();
+  /*  modelPlaced = false;
+    if (arModel) {
+        arModel.setAttribute('camera-controls', '');
+        arModel.style.pointerEvents = 'auto';
+        arModel.classList.remove('model-locked');
+    } */
+   if(camaraStream){
+    camaraStream.getTracks().forEach(track => track.stop())
+    camaraStream = null
+   }
+   if(camaraPreview){
+    camaraPreview.srcObject = null
+   }
 }
 
 function downloadBlob(blob){
@@ -282,13 +219,11 @@ function downloadBlob(blob){
     setTimeout(()=> URL.revokeObjectURL(url),1500)
 }
 
-// ── Limpiar recursos al cerrar ────────────────────────────────────────────────
 window.addEventListener('beforeunload', () => {
-    if (camaraStream) {
-        camaraStream.getTracks().forEach(track => track.stop());
-        camaraStream = null;
+    if (camaraStream){
+        camaraStream.getTracks().forEach(track => track.stop())
     }
-});
+})
 
 // ── Detección de dispositivo ──────────────────────────────────────────────────
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
