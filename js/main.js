@@ -1,10 +1,9 @@
 // ── Datos de los modelos ──────────────────────────────────────────────────────
 const MODELS = [
-
     {
         name: 'Iglesia de Colores',
         description: 'Se venera al "Cristo Negro". La devoción es tan grande que incluso se cuenta que durante la Revolución, habitantes choles escondieron la imagen original para evitar que fuera quemada.',
-        src: './../figuras/iglesia.glb', // reemplaza con tu modelo
+        src: './assets/modelos/iglesia.glb', 
     }
 ];
 
@@ -15,7 +14,12 @@ const arContainer = document.getElementById('ar-container');
 const startButton = document.getElementById('start-button');
 const backBtn = document.getElementById('back-btn');
 const arButton = document.getElementById('ar-button');
+
+// Dejamos estas declaradas (fueron comentadas antes) para que no rompan el código abajo
 const exitArBtn = document.getElementById('exit-ar-btn');
+const captureBtn = document.getElementById('capture-btn');
+const camaraPreview = document.getElementById('camara-preview');
+const photoCanvas = document.getElementById('photo-canvas');
 
 const arModel = document.getElementById('ar-model');
 const carouselTrack = document.getElementById('carousel-track');
@@ -29,13 +33,15 @@ const totalModelsEl = document.getElementById('total-models');
 
 // ── Estado del carrusel ───────────────────────────────────────────────────────
 let currentSlide = 0;
-//let camaraStream = null;
+let camaraStream = null; // Descomentada para evitar errores en resetAR()
 
 // ── Inicializar carrusel ──────────────────────────────────────────────────────
-totalModelsEl.textContent = MODELS.length;
+if (totalModelsEl) totalModelsEl.textContent = MODELS.length;
 
+// ¡Aquí está! El código adaptado para crear los model-viewer dinámicamente
 function createCarouselSlides() {
-    carouselTrack.innerHTML = '';
+    if (!carouselTrack) return;
+    carouselTrack.innerHTML = ''; 
 
     MODELS.forEach((model, index) => {
         const slide = document.createElement('div');
@@ -66,37 +72,34 @@ function createCarouselSlides() {
     });
 }
 
+// Ejecutamos la creación de las pantallas del carrusel
 createCarouselSlides();
 
 // Crear dots
-MODELS.forEach((_, i) => {
-    const dot = document.createElement('button');
-    dot.classList.add('dot');
-    if (i === 0) dot.classList.add('active');
-    dot.setAttribute('aria-label', `Ir al modelo ${i + 1}`);
-    dot.addEventListener('click', () => goToSlide(i));
-    dotsContainer.appendChild(dot);
-});
+if (dotsContainer) {
+    MODELS.forEach((_, i) => {
+        const dot = document.createElement('button');
+        dot.classList.add('dot');
+        if (i === 0) dot.classList.add('active');
+        dot.setAttribute('aria-label', `Ir al modelo ${i + 1}`);
+        dot.addEventListener('click', () => goToSlide(i));
+        dotsContainer.appendChild(dot);
+    });
+}
 
 function updateCarouselUI() {
-    // Mover track
-    carouselTrack.style.transform = `translateX(-${currentSlide * 100}%)`;
+    if (carouselTrack) carouselTrack.style.transform = `translateX(-${currentSlide * 100}%)`;
 
-    // Texto
-    modelNameEl.textContent = MODELS[currentSlide].name;
-    modelDescEl.textContent = MODELS[currentSlide].description;
+    if (modelNameEl) modelNameEl.textContent = MODELS[currentSlide].name;
+    if (modelDescEl) modelDescEl.textContent = MODELS[currentSlide].description;
+    if (currentIndexEl) currentIndexEl.textContent = currentSlide + 1;
 
-    // Contador
-    currentIndexEl.textContent = currentSlide + 1;
-
-    // Dots
     document.querySelectorAll('.dot').forEach((d, i) => {
         d.classList.toggle('active', i === currentSlide);
     });
 
-    // Botones prev/next
-    prevBtn.disabled = currentSlide === 0;
-    nextBtn.disabled = currentSlide === MODELS.length - 1;
+    if (prevBtn) prevBtn.disabled = currentSlide === 0;
+    if (nextBtn) nextBtn.disabled = currentSlide === MODELS.length - 1;
 }
 
 function goToSlide(index) {
@@ -104,24 +107,26 @@ function goToSlide(index) {
     updateCarouselUI();
 }
 
-prevBtn.addEventListener('click', () => goToSlide(currentSlide - 1));
-nextBtn.addEventListener('click', () => goToSlide(currentSlide + 1));
+if (prevBtn) prevBtn.addEventListener('click', () => goToSlide(currentSlide - 1));
+if (nextBtn) nextBtn.addEventListener('click', () => goToSlide(currentSlide + 1));
 
 // ── Swipe táctil ─────────────────────────────────────────────────────────────
 let touchStartX = 0;
 let touchEndX = 0;
 
-carouselTrack.addEventListener('touchstart', e => {
-    touchStartX = e.changedTouches[0].screenX;
-}, { passive: true });
+if (carouselTrack) {
+    carouselTrack.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
 
-carouselTrack.addEventListener('touchend', e => {
-    touchEndX = e.changedTouches[0].screenX;
-    const diff = touchStartX - touchEndX;
-    if (Math.abs(diff) > 40) {
-        diff > 0 ? goToSlide(currentSlide + 1) : goToSlide(currentSlide - 1);
-    }
-}, { passive: true });
+    carouselTrack.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        const diff = touchStartX - touchEndX;
+        if (Math.abs(diff) > 40) {
+            diff > 0 ? goToSlide(currentSlide + 1) : goToSlide(currentSlide - 1);
+        }
+    }, { passive: true });
+}
 
 // ── Navegación entre pantallas ────────────────────────────────────────────────
 if (startButton) {
@@ -148,13 +153,19 @@ if (arButton) {
         if (modelScreen) modelScreen.style.display = 'none';
         if (arContainer) arContainer.style.display = 'flex';
 
+        try {
+            // Tu lógica de acceso a cámara si la necesitas en el futuro
+        } catch (error) {
+            console.warn('No se pudo acceder a la cámara:', error);
+        }
+
         if (arModel && arModel.activateAR) {
             arModel.activateAR();
         }
     });
 }
 
-// ── Salir de AR (botón manual) ────────────────────────────────────────────────
+// En caso de que uses el botón manual de salir
 if (exitArBtn) {
     exitArBtn.addEventListener('click', () => {
         if (arContainer) arContainer.style.display = 'none';
@@ -177,37 +188,31 @@ if (arModel) {
 }
 
 function resetAR() {
-  /*  modelPlaced = false;
-    if (arModel) {
-        arModel.setAttribute('camera-controls', '');
-        arModel.style.pointerEvents = 'auto';
-        arModel.classList.remove('model-locked');
-    } */
-   if(camaraStream){
-    camaraStream.getTracks().forEach(track => track.stop())
-    camaraStream = null
+   if (camaraStream) {
+       camaraStream.getTracks().forEach(track => track.stop());
+       camaraStream = null;
    }
-   if(camaraPreview){
-    camaraPreview.srcObject = null
+   if (camaraPreview) {
+       camaraPreview.srcObject = null;
    }
 }
 
 function downloadBlob(blob){
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `ar-foto-${Date.now()}.jpg`
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    setTimeout(()=> URL.revokeObjectURL(url),1500)
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `ar-foto-${Date.now()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
 window.addEventListener('beforeunload', () => {
     if (camaraStream){
-        camaraStream.getTracks().forEach(track => track.stop())
+        camaraStream.getTracks().forEach(track => track.stop());
     }
-})
+});
 
 // ── Detección de dispositivo ──────────────────────────────────────────────────
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
