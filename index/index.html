@@ -8,44 +8,14 @@
     <title>Turismo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <link rel="stylesheet" href="./../css/style.css">
 </head>
 
 <body>
-
-    <!-- ── Pantalla de inicio ── -->
-    <div id="start-screen" class="screen">
-        <div class="start-content">
-            <span class="brand-tag">Turismo AR</span>
-            <h1>Explora la <em>Iglesia de Colores</em></h1>
-            <p>Descubre la devoción al Cristo Negro y visualiza el modelo 3D en realidad aumentada desde tu dispositivo.</p>
-
-            <div class="instructions-box">
-                <p class="instr-title">Cómo usar</p>
-                <ol>
-                    <li><span class="step-num">1</span> Presiona <strong>Iniciar</strong>.</li>
-                    <li><span class="step-num">2</span> Desliza para cambiar de modelo.</li>
-                    <li><span class="step-num">3</span> Presiona <strong>Ver en AR</strong>.</li>
-                </ol>
-            </div>
-
-            <button id="start-button" class="primary-btn">
-                Iniciar experiencia
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 12h14M13 5l7 7-7 7" />
-                </svg>
-            </button>
-
-            <p class="note">Funciona mejor en dispositivos compatibles con WebXR y model-viewer.</p>
-        </div>
-    </div>
-
-    <!-- ── Pantalla del carrusel de modelos ── -->
-    <div id="model-screen" class="screen" style="display: none;">
+    <!-- Cambiado de "display: none" a "display: flex" para que se vea directo si no hay pantalla de inicio -->
+    <div id="model-screen" class="screen" style="display: flex; flex-direction: column;">
 
         <div class="carousel-header">
             <button id="back-btn" class="icon-btn" title="Volver">
@@ -63,9 +33,10 @@
 
         <!-- Info + navegación -->
         <div class="model-info-panel">
-            <div class="model-text">
-                <h2 id="model-name">Cargando modelo...</h2>
-                <p id="model-desc">Selecciona un modelo para ver sus detalles.</p>
+            <!-- AGREGADO: Espacio para que el JS renderice el texto sin romper la consola -->
+            <div class="model-text-container" style="text-align: center; margin-bottom: 15px;">
+                <h2 id="model-name"></h2>
+                <p id="model-desc"></p>
             </div>
 
             <div class="carousel-nav">
@@ -100,9 +71,8 @@
     <!-- ── Contenedor AR ── -->
     <div id="ar-container" style="display: none;">
         <div class="ar-content">
-            <model-viewer id="ar-model" ar ar-scale="auto" camera-controls auto-rotate
-                environment-image="neutral" shadow-intensity="1.5" exposure="1" shadow-softness="0.8"
-                alt="Modelo 3D">
+            <model-viewer id="ar-model" ar ar-scale="auto" camera-controls auto-rotate environment-image="neutral"
+                shadow-intensity="1.5" exposure="1" shadow-softness="0.8" alt="Modelo 3D">
                 <div class="progress-bar hide" slot="progress-bar">
                     <div class="update-bar"></div>
                 </div>

@@ -3,7 +3,7 @@ const MODELS = [
     {
         name: 'Iglesia de Colores',
         description: 'Se venera al "Cristo Negro". La devoción es tan grande que incluso se cuenta que durante la Revolución, habitantes choles escondieron la imagen original para evitar que fuera quemada.',
-        src: './../figuras/iglesia.gbl', 
+        src: './../figuras/iglesia.glb', 
     }
 ];
 
@@ -15,7 +15,6 @@ const startButton = document.getElementById('start-button');
 const backBtn = document.getElementById('back-btn');
 const arButton = document.getElementById('ar-button');
 
-// Dejamos estas declaradas (fueron comentadas antes) para que no rompan el código abajo
 const exitArBtn = document.getElementById('exit-ar-btn');
 const captureBtn = document.getElementById('capture-btn');
 const camaraPreview = document.getElementById('camara-preview');
@@ -33,12 +32,11 @@ const totalModelsEl = document.getElementById('total-models');
 
 // ── Estado del carrusel ───────────────────────────────────────────────────────
 let currentSlide = 0;
-let camaraStream = null; // Descomentada para evitar errores en resetAR()
+let camaraStream = null; 
 
 // ── Inicializar carrusel ──────────────────────────────────────────────────────
 if (totalModelsEl) totalModelsEl.textContent = MODELS.length;
 
-// ¡Aquí está! El código adaptado para crear los model-viewer dinámicamente
 function createCarouselSlides() {
     if (!carouselTrack) return;
     carouselTrack.innerHTML = ''; 
@@ -72,11 +70,11 @@ function createCarouselSlides() {
     });
 }
 
-// Ejecutamos la creación de las pantallas del carrusel
 createCarouselSlides();
 
 // Crear dots
 if (dotsContainer) {
+    dotsContainer.innerHTML = ''; // Evita duplicados en recargas
     MODELS.forEach((_, i) => {
         const dot = document.createElement('button');
         dot.classList.add('dot');
@@ -90,8 +88,8 @@ if (dotsContainer) {
 function updateCarouselUI() {
     if (carouselTrack) carouselTrack.style.transform = `translateX(-${currentSlide * 100}%)`;
 
-    if (modelNameEl) modelNameEl.textContent = MODELS[currentSlide].name;
-    if (modelDescEl) modelDescEl.textContent = MODELS[currentSlide].description;
+    if (modelNameEl && MODELS[currentSlide]) modelNameEl.textContent = MODELS[currentSlide].name;
+    if (modelDescEl && MODELS[currentSlide]) modelDescEl.textContent = MODELS[currentSlide].description;
     if (currentIndexEl) currentIndexEl.textContent = currentSlide + 1;
 
     document.querySelectorAll('.dot').forEach((d, i) => {
@@ -101,6 +99,9 @@ function updateCarouselUI() {
     if (prevBtn) prevBtn.disabled = currentSlide === 0;
     if (nextBtn) nextBtn.disabled = currentSlide === MODELS.length - 1;
 }
+
+// Forzar actualización al cargar para poblar los textos e interfaz iniciales
+updateCarouselUI();
 
 function goToSlide(index) {
     currentSlide = Math.max(0, Math.min(index, MODELS.length - 1));
@@ -148,13 +149,13 @@ if (backBtn) {
 if (arButton) {
     arButton.addEventListener('click', async () => {
         const activeModel = MODELS[currentSlide];
-        if (arModel) arModel.setAttribute('src', activeModel.src);
+        if (arModel && activeModel) arModel.setAttribute('src', activeModel.src);
 
         if (modelScreen) modelScreen.style.display = 'none';
         if (arContainer) arContainer.style.display = 'flex';
 
         try {
-            // Tu lógica de acceso a cámara si la necesitas en el futuro
+            // Lógica de cámara opcional
         } catch (error) {
             console.warn('No se pudo acceder a la cámara:', error);
         }
@@ -165,7 +166,6 @@ if (arButton) {
     });
 }
 
-// En caso de que uses el botón manual de salir
 if (exitArBtn) {
     exitArBtn.addEventListener('click', () => {
         if (arContainer) arContainer.style.display = 'none';
@@ -209,7 +209,7 @@ function downloadBlob(blob){
 }
 
 window.addEventListener('beforeunload', () => {
-    if (camaraStream){
+    if (camaraStream) {
         camaraStream.getTracks().forEach(track => track.stop());
     }
 });
