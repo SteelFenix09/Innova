@@ -9,9 +9,15 @@ const MODELS = [
 ];
 
 // ── Referencias DOM ───────────────────────────────────────────────────────────
+const startScreen = document.getElementById('start-screen');
 const modelScreen = document.getElementById('model-screen');
+const arContainer = document.getElementById('ar-container');
+const startButton = document.getElementById('start-button');
+const backBtn = document.getElementById('back-btn');
 const arButton = document.getElementById('ar-button');
+const exitArBtn = document.getElementById('exit-ar-btn');
 
+const arModel = document.getElementById('ar-model');
 const carouselTrack = document.getElementById('carousel-track');
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
@@ -23,6 +29,7 @@ const totalModelsEl = document.getElementById('total-models');
 
 // ── Estado del carrusel ───────────────────────────────────────────────────────
 let currentSlide = 0;
+//let camaraStream = null;
 
 // ── Inicializar carrusel ──────────────────────────────────────────────────────
 totalModelsEl.textContent = MODELS.length;
@@ -38,8 +45,6 @@ function createCarouselSlides() {
         const viewer = document.createElement('model-viewer');
         viewer.classList.add('model-viewer-instance');
         viewer.setAttribute('src', model.src);
-        viewer.setAttribute('ar', '');
-        viewer.setAttribute('ar-scale', 'auto');
         viewer.setAttribute('camera-controls', '');
         viewer.setAttribute('auto-rotate', '');
         viewer.setAttribute('environment-image', 'neutral');
@@ -118,31 +123,91 @@ carouselTrack.addEventListener('touchend', e => {
     }
 }, { passive: true });
 
-// ── Inicializar pantalla del carrusel ─────────────────────────────────────────
-if (modelScreen) {
-    modelScreen.style.display = 'flex';
-    updateCarouselUI();
+// ── Navegación entre pantallas ────────────────────────────────────────────────
+if (startButton) {
+    startButton.addEventListener('click', () => {
+        if (startScreen) startScreen.style.display = 'none';
+        if (modelScreen) modelScreen.style.display = 'flex';
+        updateCarouselUI();
+    });
 }
 
-// ── Activar AR ───────────────────────────────────────────────────────────────
+if (backBtn) {
+    backBtn.addEventListener('click', () => {
+        if (modelScreen) modelScreen.style.display = 'none';
+        if (startScreen) startScreen.style.display = 'flex';
+    });
+}
+
+// ── Activar AR ────────────────────────────────────────────────────────────────
 if (arButton) {
-    arButton.addEventListener('click', () => {
-        // Obtener el model-viewer actual del carrusel
-        const slides = document.querySelectorAll('.carousel-slide');
-        if (slides[currentSlide]) {
-            const viewer = slides[currentSlide].querySelector('model-viewer');
-            if (viewer && viewer.activateAR) {
-                viewer.activateAR();
-            }
+    arButton.addEventListener('click', async () => {
+        const activeModel = MODELS[currentSlide];
+        if (arModel) arModel.setAttribute('src', activeModel.src);
+
+        if (modelScreen) modelScreen.style.display = 'none';
+        if (arContainer) arContainer.style.display = 'flex';
+
+        if (arModel && arModel.activateAR) {
+            arModel.activateAR();
         }
     });
 }
 
+// ── Salir de AR (botón manual) ────────────────────────────────────────────────
+if (exitArBtn) {
+    exitArBtn.addEventListener('click', () => {
+        if (arContainer) arContainer.style.display = 'none';
+        if (modelScreen) modelScreen.style.display = 'flex';
+        resetAR();
+    });
+}
 
-// ── Limpiar recursos al cerrar ────────────────────────────────────────────────
+// ── Eventos del AR model-viewer ───────────────────────────────────────────────
+if (arModel) {
+    arModel.addEventListener('ar-status', e => {
+        console.log('Estado AR:', e.detail.status);
+
+        if (e.detail.status === 'not-presenting' || e.detail.status === 'session-ended') {
+            if (arContainer) arContainer.style.display = 'none';
+            if (modelScreen) modelScreen.style.display = 'flex';
+            resetAR();
+        }
+    });
+}
+
+function resetAR() {
+  /*  modelPlaced = false;
+    if (arModel) {
+        arModel.setAttribute('camera-controls', '');
+        arModel.style.pointerEvents = 'auto';
+        arModel.classList.remove('model-locked');
+    } */
+   if(camaraStream){
+    camaraStream.getTracks().forEach(track => track.stop())
+    camaraStream = null
+   }
+   if(camaraPreview){
+    camaraPreview.srcObject = null
+   }
+}
+
+function downloadBlob(blob){
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `ar-foto-${Date.now()}.jpg`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    setTimeout(()=> URL.revokeObjectURL(url),1500)
+}
+
 window.addEventListener('beforeunload', () => {
-    // Limpieza si es necesaria
-});
+    if (camaraStream){
+        camaraStream.getTracks().forEach(track => track.stop())
+    }
+})
 
 // ── Detección de dispositivo ──────────────────────────────────────────────────
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
